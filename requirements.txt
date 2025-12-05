@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+motor
+pymongo
+sentence-transformers
+numpy
+pandas
+python-dotenv
+python-jose
+passlib[bcrypt]
+openpyxl
+google-generativeai
