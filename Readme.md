@@ -21,47 +21,6 @@ This project is a **production-grade backend platform** for uploading, enriching
 
 This version refactors the original monolithic *TestCases-RAG* implementation into a **fully modular architecture** to support improved debugging, scalability, and experimentation workflows.
 
----
-
-## 📂 Project Structure
-
-```
-
-app/
-├── main.py                # App startup + lifespan orchestration
-│
-├── core/
-│   ├── config.py          # Env + constants
-│   ├── logging.py         # Structured logging
-│   ├── cache.py           # In-memory query caching
-│   ├── security.py        # JWT + password hashing
-│   └── analytics.py      # Audit logging
-│
-├── db/
-│   └── mongo.py           # MongoDB connection + helpers
-│
-├── models/
-│   ├── schemas.py         # Pydantic DTO schemas
-│   └── users.py           # Mongo user CRUD helpers
-│
-├── services/
-│   ├── embeddings.py     # SentenceTransformer lifecycle + batching
-│   ├── keywords.py       # Keyword extraction & fallback summaries
-│   ├── enrichment.py     # Gemini test-case enrichment
-│   ├── expansion.py      # Gemini query expansion
-│   ├── rerank.py         # Gemini reranking
-│   └── ranking.py        # Multi-signal scoring + A/B testing logic
-│
-├── routes/
-│   ├── auth.py            # Login + Register APIs
-│   ├── upload.py          # CSV/XLSX ingestion + enrichment + embeddings
-│   ├── search.py          # Hybrid vector + heuristic search
-│   ├── update.py          # Record updates + reprocessing
-│   └── admin.py           # Admin maintenance + metrics APIs
-│
-└── middleware/            # Reserved for global middleware (future)
-
-````
 
 ---
 
