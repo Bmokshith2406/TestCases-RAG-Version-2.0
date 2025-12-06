@@ -3,58 +3,58 @@
 
 ---
 
-## 🔍 Overview
+## Overview
 
-This project is a **production-grade backend platform** for uploading, enriching, indexing, and semantically searching software test cases using:
+This project is a production-grade backend platform for uploading, enriching, indexing, and semantically searching software test cases using:
 
-- ✅ **FastAPI** for APIs  
-- ✅ **MongoDB Atlas** for persistence & vector search  
-- ✅ **SentenceTransformers (all-MiniLM-L6-v2)** for embeddings  
-- ✅ **Google Gemini** for enrichment, query expansion, and reranking  
-- ✅ **JWT Authentication** with role-based access  
-- ✅ **Advanced ranking heuristics + A/B testing**  
-- ✅ **Search caching**  
-- ✅ **Audit logging + metrics**
+- FastAPI for APIs  
+- MongoDB Atlas for persistence and vector search  
+- SentenceTransformers (all-MiniLM-L6-v2) for embeddings  
+- Google Gemini for enrichment, query expansion, and reranking  
+- JWT Authentication with role-based access  
+- Advanced ranking heuristics and A/B testing  
+- Search caching  
+- Audit logging and metrics
 
-This refactor modularizes the original single-file application into clean layers to enable easier **debugging, scaling, and experimentation workflows**.
+This refactor modularizes the original single-file application into clean service layers for easier debugging, scaling, and experimentation workflows.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 
 app/
-├── main.py                # App startup + lifespan orchestration
+├── main.py                # App startup and lifespan orchestration
 │
-├── core/                  # Global configuration & security
-│   ├── config.py          # Env + constants
+├── core/                  # Global configuration and security
+│   ├── config.py          # Env and constants
 │   ├── logging.py         # Structured logging
 │   ├── cache.py           # In-memory query caching
-│   ├── security.py        # JWT + password hashing
+│   ├── security.py        # JWT and password hashing
 │   └── analytics.py      # Audit logging
 │
 ├── db/
-│   └── mongo.py           # MongoDB connection + helpers
+│   └── mongo.py           # MongoDB connection and helpers
 │
 ├── models/
 │   ├── schemas.py         # Pydantic DTO schemas
 │   └── users.py           # Mongo user CRUD helpers
 │
 ├── services/
-│   ├── embeddings.py     # SentenceTransformer lifecycle + batching
-│   ├── keywords.py       # Keyword extraction & fallback summaries
+│   ├── embeddings.py     # SentenceTransformer lifecycle and batching
+│   ├── keywords.py       # Keyword extraction and fallback summaries
 │   ├── enrichment.py     # Gemini test-case enrichment
 │   ├── expansion.py      # Gemini query expansion
 │   ├── rerank.py          # Gemini reranking
-│   └── ranking.py         # Multi-signal scoring + A/B logic
+│   └── ranking.py         # Multi-signal scoring and A/B logic
 │
 ├── routes/
-│   ├── auth.py            # Login / Register APIs
-│   ├── upload.py          # CSV/XLSX ingestion + enrichment + embeddings
-│   ├── search.py          # Hybrid vector + heuristic ranking search
-│   ├── update.py          # Test case updates + reprocessing
-│   └── admin.py           # Admin maintenance + metrics APIs
+│   ├── auth.py            # Login and register APIs
+│   ├── upload.py          # CSV/XLSX ingestion and enrichment pipeline
+│   ├── search.py          # Hybrid vector search with ranking
+│   ├── update.py          # Test case updates and reprocessing
+│   └── admin.py           # Admin maintenance and metrics APIs
 │
 └── middleware/            # Optional global middleware (future work)
 
@@ -62,9 +62,9 @@ app/
 
 ---
 
-## ⚙️ Setup & Installation
+## Setup and Installation
 
-### ✅ 1. Python Version
+### Python Version
 
 ```
 
@@ -74,7 +74,7 @@ Python 3.10+
 
 ---
 
-### ✅ 2. Clone & Setup Virtual Environment
+### Clone and Setup Virtual Environment
 
 ```bash
 git clone <your-repository>
@@ -87,7 +87,7 @@ source .venv/bin/activate      # macOS/Linux
 
 ---
 
-### ✅ 3. Install Dependencies
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -95,9 +95,9 @@ pip install -r requirements.txt
 
 ---
 
-## 📦 Required Packages
+## Required Packages
 
-Your **`requirements.txt`** should include:
+`requirements.txt` should include:
 
 ```txt
 fastapi
@@ -118,9 +118,9 @@ python-multipart
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
-Create a **`.env`** file in the root:
+Create a `.env` file:
 
 ```env
 GOOGLE_API_KEY=your-google-api-key
@@ -130,9 +130,9 @@ JWT_SECRET_KEY=change-me-in-production
 
 ---
 
-## ✅ MongoDB Requirements
+## MongoDB Requirements
 
-You must create a **Vector Search Index** in MongoDB Atlas using the following configuration on the field `main_vector`:
+Create a vector search index on the `main_vector` field:
 
 ```json
 {
@@ -148,19 +148,19 @@ You must create a **Vector Search Index** in MongoDB Atlas using the following c
 }
 ```
 
-### 🔍 Index Name
+Index name:
 
 ```
 vector_index
 ```
 
-> ⚠️ The name must match exactly.
+The name must match exactly.
 
 ---
 
-## ▶️ Running the Application
+## Running the Application
 
-Start the FastAPI backend:
+Start the backend server:
 
 ```bash
 uvicorn app.main:app --reload
@@ -168,7 +168,7 @@ uvicorn app.main:app --reload
 
 ---
 
-### 🌐 Access Endpoints
+### API Access
 
 | Resource   | URL                                                        |
 | ---------- | ---------------------------------------------------------- |
@@ -180,11 +180,11 @@ uvicorn app.main:app --reload
 
 ---
 
-## 🔐 Authentication & User Roles
+## Authentication and User Roles
 
 ### Create Account
 
-**POST** `/auth/register`
+POST `/auth/register`
 
 ```json
 {
@@ -198,9 +198,9 @@ uvicorn app.main:app --reload
 
 ### Login
 
-**POST** `/auth/login`
+POST `/auth/login`
 
-*(Form-encoded)*
+Form-encoded
 
 Returns:
 
@@ -215,7 +215,7 @@ Returns:
 
 ### Use Token
 
-Add to API headers:
+Add header:
 
 ```
 Authorization: Bearer YOUR_TOKEN
@@ -223,29 +223,31 @@ Authorization: Bearer YOUR_TOKEN
 
 ---
 
-### 👥 Role Permissions
+### Role Permissions
 
-| Role   | Permissions                                   |
-| ------ | --------------------------------------------- |
-| viewer | Search only                                   |
-| editor | Upload, update, delete individual test cases  |
-| admin  | Full control, delete all data, metrics access |
-
----
+| Role   | Permissions                                  |
+| ------ | -------------------------------------------- |
+| viewer | Search only                                  |
+| editor | Upload, update, delete individual test cases |
+| admin  | Full control, delete all data, metrics       |
 
 ---
 
-## 📤 Uploading Test Cases
+---
 
-**POST** `/api/upload`
-(**editor or admin role required**)
+## Uploading Test Cases
 
-### Accepted File Types
+POST `/api/upload`
+Authorization required: editor or admin
+
+### Accepted Files
 
 * `.csv`
 * `.xlsx`
 
-### ✅ Required Columns
+---
+
+### Required Columns
 
 * Test Case ID
 * Feature
@@ -255,29 +257,32 @@ Authorization: Bearer YOUR_TOKEN
 * Expected Result
 * Step No.
 
-### 🧩 Optional Columns
+---
 
-* Tags *(comma-separated)*
+### Optional Columns
+
+* Tags (comma-separated)
 * Priority
 * Platform
 
 ---
 
-### 📌 Processing Flow
+### Processing Pipeline
 
 1. File ingestion
-2. Gemini summary + keyword extraction
-3. Batched SentenceTransformer embeddings
-4. Mean vector generation
-5. MongoDB insert + indexing
+2. Gemini summary generation
+3. Keyword extraction
+4. SentenceTransformer embedding
+5. Mean vector creation
+6. MongoDB insert and indexing
 
 ---
 
 ---
 
-## 🔍 Searching Test Cases
+## Searching Test Cases
 
-**POST** `/api/search`
+POST `/api/search`
 
 ```json
 {
@@ -292,41 +297,41 @@ Authorization: Bearer YOUR_TOKEN
 
 ---
 
-### 🧠 Search Pipeline
+### Search Pipeline
 
 ```
 User Query
-   ↓
+   →
 Embedding
-   ↓
-MongoDB $vectorSearch
-   ↓
-Local signal-fusion ranking
-   ↓
-Optional Gemini re-ranking
-   ↓
+   →
+MongoDB vector search
+   →
+Local rank fusion
+   →
+Optional Gemini reranking
+   →
 Diversity filtering
-   ↓
+   →
 Final TOP-K results
 ```
 
 ---
 
-### 📊 Scoring Signals
+### Scoring Signals
 
 ---
 
-#### Ranking Variant A — **Baseline**
+**Ranking A — Baseline**
 
 ```
-0.60 × Vector similarity  
-0.25 × Max cosine similarity  
+0.60 × Vector similarity
+0.25 × Max cosine similarity
 + Token match boosts
 ```
 
 ---
 
-#### Ranking Variant B — **Enhanced**
+**Ranking B — Enhanced**
 
 ```
 0.45 × Vector similarity
@@ -339,7 +344,7 @@ Final TOP-K results
 
 ---
 
-Use:
+Specify ranking mode:
 
 ```json
 "ranking_variant": "A" | "B"
@@ -349,11 +354,11 @@ Use:
 
 ---
 
-## 🔄 Updating Records
+## Updating Records
 
-**PUT** `/api/update/{doc_id}`
+PUT `/api/update/{doc_id}`
 
-### Partial Update Example
+Example:
 
 ```json
 {
@@ -365,9 +370,9 @@ Use:
 
 ---
 
-### 🔁 Triggers Automatically
+### Automatic Triggers
 
-* Gemini re-enrichment (if needed)
+* Gemini re-enrichment if required
 * Re-embedding
 * Main vector recalculation
 
@@ -375,30 +380,30 @@ Use:
 
 ---
 
-## 👮 Admin APIs
+## Admin APIs
 
 ### Get All Test Cases
 
-**GET** `/api/get-all`
+GET `/api/get-all`
 
 ---
 
-### Delete ALL Data
+### Delete All Test Cases
 
-**POST** `/api/delete-all?confirm=true`
-*(admin only)*
+POST `/api/delete-all?confirm=true`
+Admin only
 
 ---
 
 ### Delete Single Test Case
 
-**DELETE** `/api/testcase/{id}`
+DELETE `/api/testcase/{id}`
 
 ---
 
 ### Metrics
 
-**GET** `/api/metrics`
+GET `/api/metrics`
 
 Returns:
 
@@ -413,7 +418,7 @@ Returns:
 
 ---
 
-## 🧾 Audit Logging
+## Audit Logging
 
 Every search request records:
 
@@ -424,7 +429,7 @@ Every search request records:
 * Ranking variant
 * Result count
 
-### Mongo Collection
+Mongo collection:
 
 ```
 api_audit_logs
@@ -432,49 +437,49 @@ api_audit_logs
 
 ---
 
-### ✅ Why Audit Logging Matters
+## Why Audit Logging Matters
 
 * Quality monitoring
 * Ranking experimentation feedback
-* Popular query tracking
-* Search UX optimization
+* Popular query discovery
+* Search UX improvements
 
 ---
 
 ---
 
-## 🧠 Development Workflow
+## Development Workflow
 
-### Recommended Flow
+---
 
-#### Ranking & Ranking Experiments
+### Ranking Updates
 
-```text
+```
 app/services/ranking.py
 ```
 
 ---
 
-#### LLM Strategy Experiments
+### LLM Experiments
 
-```text
+```
 app/services/expansion.py
 app/services/rerank.py
 ```
 
 ---
 
-#### Data Schema Updates
+### Schema Updates
 
-```text
+```
 app/models/schemas.py
 ```
 
 ---
 
-#### Route Wiring Only
+### Route Wiring
 
-```text
+```
 app/routes/
 ```
 
@@ -482,15 +487,9 @@ app/routes/
 
 ---
 
-## 🚀 Version
+## Version
 
 ```
 TestCases-RAG-Version-2.0
 ```
 
----
-
-✅ Built for scalable testing knowledge discovery with AI-powered semantic search and ranking.
-
-```
-```
