@@ -5,16 +5,17 @@
 
 ## Overview
 
-This project is a production-grade backend platform for uploading, enriching, indexing, and semantically searching software test cases using:
+This project is a production-grade backend platform for uploading, enriching, indexing, deduplicating, and semantically searching software test cases using:
 
 - FastAPI for APIs  
 - MongoDB Atlas for persistence and vector search  
 - SentenceTransformers (all-MiniLM-L6-v2) for embeddings  
 - Google Gemini for enrichment, query expansion, and reranking  
 - JWT Authentication with role-based access  
-- Advanced ranking heuristics and A/B testing  
-- Search caching  
-- Audit logging and metrics
+- Advanced ranking heuristics with A/B testing  
+- Automatic duplicate detection and suppression  
+- Query caching  
+- Audit logging and search metrics  
 
 This refactor modularizes the original single-file application into clean service layers for easier debugging, scaling, and experimentation workflows.
 
@@ -28,35 +29,40 @@ app/
 ├── main.py                # App startup and lifespan orchestration
 │
 ├── core/                  # Global configuration and security
-│   ├── config.py          # Env and constants
+│   ├── config.py          # Environment variables and constants
 │   ├── logging.py         # Structured logging
 │   ├── cache.py           # In-memory query caching
 │   ├── security.py        # JWT and password hashing
-│   └── analytics.py      # Audit logging
+│   └── analytics.py      # Audit logging & metrics
 │
 ├── db/
 │   └── mongo.py           # MongoDB connection and helpers
 │
 ├── models/
 │   ├── schemas.py         # Pydantic DTO schemas
-│   └── users.py           # Mongo user CRUD helpers
+│   └── users.py           # MongoDB user CRUD helpers
 │
 ├── services/
-│   ├── embeddings.py     # SentenceTransformer lifecycle and batching
-│   ├── keywords.py       # Keyword extraction and fallback summaries
-│   ├── enrichment.py     # Gemini test-case enrichment
-│   ├── expansion.py      # Gemini query expansion
-│   ├── rerank.py          # Gemini reranking
-│   └── ranking.py         # Multi-signal scoring and A/B logic
+│   ├── embeddings.py        # SentenceTransformer lifecycle and batching
+│   ├── keywords.py          # Keyword extraction
+│   ├── enrichment.py        # Gemini test-case enrichment
+│   ├── expansion.py         # Gemini query expansion
+│   ├── rerank.py            # Gemini reranking logic
+│   ├── ranking.py           # Multi-signal scoring + A/B ranking
+│
+│   # Deduplication Layer
+│   ├── dedupe_search_helper.py   # Candidate retrieval (vector + fuzzy)
+│   ├── dedupe_summary.py         # Summary normalization & fingerprinting
+│   └── dedupe_verifier.py        # Duplicate verification thresholds
 │
 ├── routes/
-│   ├── auth.py            # Login and register APIs
-│   ├── upload.py          # CSV/XLSX ingestion and enrichment pipeline
-│   ├── search.py          # Hybrid vector search with ranking
-│   ├── update.py          # Test case updates and reprocessing
-│   └── admin.py           # Admin maintenance and metrics APIs
+│   ├── auth.py             # Login and registration APIs
+│   ├── upload.py           # CSV/XLSX ingestion, dedupe, enrichment pipeline
+│   ├── search.py           # Hybrid vector search + ranking
+│   ├── update.py           # Test case updates and reprocessing
+│   └── admin.py            # Admin maintenance and metrics APIs
 │
-└── middleware/            # Optional global middleware (future work)
+└── middleware/             # Optional global middleware
 
 ```
 
@@ -97,7 +103,7 @@ pip install -r requirements.txt
 
 ## Required Packages
 
-`requirements.txt` should include:
+Your `requirements.txt` should include:
 
 ```txt
 fastapi
@@ -130,7 +136,7 @@ JWT_SECRET_KEY=change-me-in-production
 
 ---
 
-## MongoDB Requirements
+## MongoDB Vector Search Requirements
 
 Create a vector search index on the `main_vector` field:
 
@@ -148,19 +154,17 @@ Create a vector search index on the `main_vector` field:
 }
 ```
 
-Index name:
+Index Name:
 
 ```
 vector_index
 ```
 
-The name must match exactly.
-
 ---
 
 ## Running the Application
 
-Start the backend server:
+Start the backend:
 
 ```bash
 uvicorn app.main:app --reload
@@ -178,11 +182,9 @@ uvicorn app.main:app --reload
 
 ---
 
----
-
 ## Authentication and User Roles
 
-### Create Account
+### Register
 
 POST `/auth/register`
 
@@ -198,11 +200,9 @@ POST `/auth/register`
 
 ### Login
 
-POST `/auth/login`
+POST `/auth/login` (x-www-form-urlencoded)
 
-Form-encoded
-
-Returns:
+Response:
 
 ```json
 {
@@ -213,9 +213,9 @@ Returns:
 
 ---
 
-### Use Token
+### Usage
 
-Add header:
+Add to request headers:
 
 ```
 Authorization: Bearer YOUR_TOKEN
@@ -229,7 +229,7 @@ Authorization: Bearer YOUR_TOKEN
 | ------ | -------------------------------------------- |
 | viewer | Search only                                  |
 | editor | Upload, update, delete individual test cases |
-| admin  | Full control, delete all data, metrics       |
+| admin  | Full control, bulk delete, metrics           |
 
 ---
 
@@ -238,7 +238,9 @@ Authorization: Bearer YOUR_TOKEN
 ## Uploading Test Cases
 
 POST `/api/upload`
-Authorization required: editor or admin
+Authorization required: `editor` or `admin`
+
+---
 
 ### Accepted Files
 
@@ -267,14 +269,86 @@ Authorization required: editor or admin
 
 ---
 
-### Processing Pipeline
+---
 
+## Deduplication System (Auto-Dedupe)
+
+Before any test case is stored or enriched, a **multi-layer duplicate detection pipeline** ensures that already indexed or semantically equivalent records are not added again.
+
+---
+
+### Dedupe Modules
+
+| Module                    | Responsibility                                                         |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `dedupe_search_helper.py` | Vector KNN and fuzzy text matching to retrieve duplicate candidates    |
+| `dedupe_summary.py`       | Content normalization + semantic fingerprint generation                |
+| `dedupe_verifier.py`      | Final similarity evaluation and threshold-based duplicate confirmation |
+
+---
+
+### Dedupe Workflow
+
+```
+Incoming Test Case
+      ↓
+Text Normalization & Summary Fingerprinting
+      ↓
+Candidate Retrieval
+(Vector Search + Fuzzy Matching)
+      ↓
+Semantic Similarity Verification
+      ↓
+Threshold Filtering
+      ↓
+Duplicate Decision
+```
+
+---
+
+### Detection Signals
+
+* Embedding cosine similarity
+* Keyword overlap ratio
+* Summary text similarity
+* Test step semantic alignment
+* Feature name correlation
+
+---
+
+### Behavior
+
+* Confirmed duplicates are **skipped**
+* Duplicate metadata is logged
+* Only truly unique test cases proceed to enrichment and storage
+
+---
+
+### Result
+
+This ensures:
+
+* No index contamination
+* Reduced storage usage
+* Higher ranking precision
+* Improved search relevance
+
+---
+
+---
+
+## Upload Processing Pipeline
+
+```
 1. File ingestion
-2. Gemini summary generation
-3. Keyword extraction
-4. SentenceTransformer embedding
-5. Mean vector creation
-6. MongoDB insert and indexing
+2. Content normalization
+3. Multi-layer duplicate detection
+4. Gemini enrichment
+5. Keyword extraction
+6. SentenceTransformer embedding
+7. Mean vector generation
+8. MongoDB insert & vector indexing
+```
 
 ---
 
@@ -304,24 +378,24 @@ User Query
    →
 Embedding
    →
-MongoDB vector search
+MongoDB Vector Search
    →
-Local rank fusion
+Local Rank Fusion
    →
-Optional Gemini reranking
+Optional Gemini Re-ranking
    →
-Diversity filtering
+Diversity Filtering
    →
-Final TOP-K results
+Final TOP-K Results
 ```
 
 ---
 
-### Scoring Signals
+### Ranking Signals
 
 ---
 
-**Ranking A — Baseline**
+**Ranking A – Baseline**
 
 ```
 0.60 × Vector similarity
@@ -331,7 +405,7 @@ Final TOP-K results
 
 ---
 
-**Ranking B — Enhanced**
+**Ranking B – Enhanced**
 
 ```
 0.45 × Vector similarity
@@ -344,7 +418,7 @@ Final TOP-K results
 
 ---
 
-Specify ranking mode:
+Specify:
 
 ```json
 "ranking_variant": "A" | "B"
@@ -358,8 +432,6 @@ Specify ranking mode:
 
 PUT `/api/update/{doc_id}`
 
-Example:
-
 ```json
 {
   "feature": "Payments",
@@ -372,9 +444,9 @@ Example:
 
 ### Automatic Triggers
 
-* Gemini re-enrichment if required
+* Re-enrichment using Gemini (if needed)
 * Re-embedding
-* Main vector recalculation
+* Vector recalculation
 
 ---
 
@@ -388,14 +460,14 @@ GET `/api/get-all`
 
 ---
 
-### Delete All Test Cases
+### Delete all Records
 
 POST `/api/delete-all?confirm=true`
 Admin only
 
 ---
 
-### Delete Single Test Case
+### Delete Individual Record
 
 DELETE `/api/testcase/{id}`
 
@@ -404,8 +476,6 @@ DELETE `/api/testcase/{id}`
 ### Metrics
 
 GET `/api/metrics`
-
-Returns:
 
 ```json
 {
@@ -416,16 +486,14 @@ Returns:
 
 ---
 
----
-
 ## Audit Logging
 
-Every search request records:
+Each search request logs:
 
 * Timestamp
 * Endpoint
 * User
-* Request payload
+* Filters and query payload
 * Ranking variant
 * Result count
 
@@ -437,22 +505,13 @@ api_audit_logs
 
 ---
 
-## Why Audit Logging Matters
-
-* Quality monitoring
-* Ranking experimentation feedback
-* Popular query discovery
-* Search UX improvements
-
----
-
 ---
 
 ## Development Workflow
 
 ---
 
-### Ranking Updates
+### Ranking & Signals
 
 ```
 app/services/ranking.py
@@ -460,7 +519,7 @@ app/services/ranking.py
 
 ---
 
-### LLM Experiments
+### LLM Strategy
 
 ```
 app/services/expansion.py
@@ -469,7 +528,7 @@ app/services/rerank.py
 
 ---
 
-### Schema Updates
+### Data Models
 
 ```
 app/models/schemas.py
@@ -477,7 +536,7 @@ app/models/schemas.py
 
 ---
 
-### Route Wiring
+### API Wiring
 
 ```
 app/routes/
@@ -493,3 +552,9 @@ app/routes/
 TestCases-RAG-Version-2.0
 ```
 
+---
+
+Built for scalable, deduplicated test knowledge discovery using AI-powered semantic search and ranking.
+
+```
+```
