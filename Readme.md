@@ -1,104 +1,80 @@
-# Intelligent Test Case Search Platform  
-## TestCases-RAG — Modular Edition v2.0
+Intelligent Test Case Search Platform – Modular Edition
+🔍 Overview
 
-A **production-grade AI-powered backend platform** designed for uploading, enriching, indexing, and **semantically searching software test cases** using **LLM enrichment, vector search, and ranking experimentation**.
+This project is a production-grade backend platform for uploading, enriching, indexing, and semantically searching software test cases using:
 
-This edition refactors the original monolithic system into a **clean modular architecture** built for:
+✅ FastAPI for APIs
 
-- Scalability  
-- Observability  
-- Ranking experimentation (A/B testing)  
-- Maintainability  
-- Real-world production workloads  
+✅ MongoDB Atlas for persistence & vector search
 
----
+✅ SentenceTransformers (all-MiniLM-L6-v2) for embeddings
 
-## Core Technology Stack
+✅ Google Gemini for enrichment, query expansion, and reranking
 
-| Layer | Technology |
-|------|-------------|
-| API Framework | FastAPI |
-| Database | MongoDB Atlas (Vector Search enabled) |
-| Embeddings | SentenceTransformers – `all-MiniLM-L6-v2` |
-| LLM Enrichment & Rerank | Google Gemini |
-| Authentication | JWT with Role-Based Access Control |
-| Ranking | Multi-signal weighted fusion + A/B testing |
-| Caching | Query-level in-memory cache |
-| Analytics | Audit logs + Metrics endpoints |
+✅ JWT Authentication with role-based access
 
----
+✅ Advanced ranking heuristics + A/B testing
 
-## Platform Capabilities
+✅ Search caching
 
-### AI Enrichment Pipeline
-- Gemini extracts:
-  - Key intent terms  
-  - Relevant summary tokens  
-  - Semantic boosters  
-  - Search tags  
+✅ Audit logging + metrics
 
-### Vector Search Engine
-- SentenceTransformer generates:
-  - Chunk embeddings  
-  - Aggregate mean vectors  
+This refactor modularizes the original single-file app into clean layers for easier debugging, scaling, and experiment workflows.
 
-- MongoDB Atlas `$vectorSearch` handles retrieval
+📂 Project Structure
+app/
+├── main.py                # App startup + lifespan orchestration
+│
+├── core/                  # Global configuration & security
+│   ├── config.py          # Env + constants
+│   ├── logging.py         # Structured logging
+│   ├── cache.py           # In-memory query caching
+│   ├── security.py        # JWT + password hashing
+│   └── analytics.py      # Audit logging
+│
+├── db/
+│   └── mongo.py           # MongoDB connection + helpers
+│
+├── models/
+│   ├── schemas.py         # Pydantic DTO schemas
+│   └── users.py           # Mongo user CRUD helpers
+│
+├── services/
+│   ├── embeddings.py     # SentenceTransformer lifecycle + batching
+│   ├── keywords.py       # Keyword extraction & fallback summaries
+│   ├── enrichment.py     # Gemini test-case enrichment
+│   ├── expansion.py      # Gemini query expansion
+│   ├── rerank.py          # Gemini reranking
+│   └── ranking.py         # Multi-signal scoring + A/B logic
+│
+├── routes/
+│   ├── auth.py            # Login / Register APIs
+│   ├── upload.py          # CSV/XLSX ingestion + enrichment + embeddings
+│   ├── search.py          # Hybrid vector + heuristic ranking search
+│   ├── update.py          # Test case updates + reprocessing
+│   └── admin.py           # Admin maintenance + metrics APIs
+│
+└── middleware/            # Optional global middleware (future work)
 
-### Ranking System
-Signals used for scoring:
-- Lexical overlap  
-- Vector similarity  
-- Feature relevance  
-- Semantic closeness  
-- Token density boosting  
-- Popularity weighting  
+⚙️ Setup & Installation
+✅ 1. Python version
+Python 3.10+
 
-### Secure Access Control
-
-| Role | Capabilities |
-|------|---------------|
-| Viewer | Search only |
-| Editor | Upload, update, delete test cases |
-| Admin | Full system access, purge operations, and metrics access |
-
----
-
-## System Setup
-
-### Requirements
-
-- Python 3.10+  
-- MongoDB Atlas cluster with Vector Search enabled  
-- Google Gemini API key
-
----
-
-## Clone and Initialize Environment
-
-```bash
-git clone <your-repository-url>
-cd TestCases-RAG
+✅ 2. Clone & setup virtual environment
+git clone <your-repository>
+cd <your-repository>
 
 python -m venv .venv
+source .venv/bin/activate        # macOS/Linux
+.venv\Scripts\activate           # Windows
 
-# Linux / macOS
-source .venv/bin/activate
-
-# Windows
-.venv\Scripts\activate
-````
-
----
-
-## Install Dependencies
-
-```bash
+✅ 3. Install dependencies
 pip install -r requirements.txt
-```
 
-### Required Packages
+📦 Required Packages
 
-```
+Your requirements.txt should include:
+
 fastapi
 uvicorn
 motor
@@ -108,30 +84,25 @@ numpy
 pandas
 python-dotenv
 python-jose
-passlib[bcrypt]
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+openpyxl
 google-generativeai
-```
+python-multipart
 
----
+🔑 Environment Variables
 
-## Environment Variables
+Create a .env file:
 
-Create a `.env` file:
+GOOGLE_API_KEY=your-google-api-key
+MONGO_CONNECTION_STRING=your-mongodb-uri
 
-```env
-GOOGLE_API_KEY=your_gemini_api_key
-MONGO_CONNECTION_STRING=your_mongodb_uri
+JWT_SECRET_KEY=change-me-in-prod
 
-JWT_SECRET_KEY=change_this_in_production
-```
+✅ MongoDB Requirements
 
----
+You must create a Vector Search Index in MongoDB Atlas on the main_vector field:
 
-## MongoDB Vector Search Configuration
-
-Create a vector index on the `main_vector` field:
-
-```json
 {
   "fields": [
     {
@@ -143,312 +114,255 @@ Create a vector index on the `main_vector` field:
     }
   ]
 }
-```
 
-### Index Name
 
-```
+
+
+Name the index exactly:
+
 vector_index
-```
 
----
+▶️ Running the App
 
-## Running the Service
+Start the backend:
 
-```bash
 uvicorn app.main:app --reload
-```
 
-### Service URL
 
-```
+API available at:
+
 http://localhost:8000
-```
 
-### Swagger Docs
 
-```
+Interactive docs:
+
 http://localhost:8000/docs
-```
 
----
-
-## Authentication
-
-### Register
-
-```http
+🔐 Authentication & User Roles
+Create Account
 POST /auth/register
-```
 
-```json
 {
   "username": "admin",
   "password": "test123",
   "role": "admin"
 }
-```
 
----
-
-### Login
-
-```http
+Login
 POST /auth/login
-```
 
-Response:
 
-```json
+(form-encoded)
+
+Returns JWT:
+
 {
-  "access_token": "<JWT>",
+  "access_token": "...",
   "token_type": "bearer"
 }
-```
 
-### Authorization Header
+Use Token
 
-```
-Authorization: Bearer <ACCESS_TOKEN>
-```
+Add to headers:
 
----
+Authorization: Bearer YOUR_TOKEN
 
-## Uploading Test Cases
-
-### Endpoint
-
-```http
+Role Permissions
+Role	Allowed actions
+viewer	Search only
+editor	Upload, update, delete individual test cases
+admin	Full control + delete-all + metrics
+📤 Uploading Test Cases
 POST /api/upload
-```
 
-Access: `editor` or `admin`
 
----
+Auth required: editor or admin
 
-### Supported File Formats
+Accepts:
 
-* `.csv`
-* `.xlsx`
+.csv
 
----
+.xlsx
 
-### Mandatory Columns
+Required columns
 
-* Test Case ID
-* Feature
-* Test Case Description
-* Pre-requisites
-* Test Step
-* Expected Result
-* Step No.
+Test Case ID
 
----
+Feature
 
-### Optional Columns
+Test Case Description
 
-* Tags (comma-separated)
-* Priority
-* Platform
+Pre-requisites
 
----
+Test Step
 
-## Data Ingestion Pipeline
+Expected Result
 
-```text
-Upload File
-     ↓
-Gemini enrichment (summaries, keywords, tags)
-     ↓
-SentenceTransformer embeddings
-     ↓
-Vector aggregation
-     ↓
-MongoDB vector insertion and indexing
-```
+Step No.
 
----
+Optional columns:
 
-## Intelligent Search
+Tags – comma-separated
 
-### Endpoint
+Priority
 
-```http
+Platform
+
+Processing Flow
+
+File ingestion
+
+Gemini summary + keyword generation
+
+Batched SentenceTransformer embedding
+
+Mean vector creation for indexing
+
+Mongo insert
+
+🔍 Searching Test Cases
 POST /api/search
-```
 
----
-
-### Example Request
-
-```json
 {
-  "query": "payment gateway retry failure",
+  "query": "payment failure",
   "feature": "Checkout",
   "tags": ["Regression"],
   "priority": "High",
   "platform": "Mobile",
   "ranking_variant": "B"
 }
-```
 
----
-
-## Search Pipeline
-
-```text
-Query
+Search Pipeline
+Input Query
    ↓
-Embedding generation
+Embedding
    ↓
-MongoDB Vector Search
+MongoDB $vectorSearch
    ↓
-Local rank fusion
+Local signal fusion ranker
    ↓
-Optional Gemini reranking
+(Gemini re-ranking optional)
    ↓
 Diversity filtering
    ↓
-Top-K semantic matches
-```
+Final TOP-K results
 
----
+Scoring Signals
 
-## Ranking Models
+Ranking A ("Baseline")
 
-### Variant A — Baseline
+0.60 * Vector similarity
+0.25 * Max cosine similarity
++ Token match boosts
 
-```text
-0.60 × Vector similarity
-0.25 × Max cosine similarity
-+ Token overlap boosts
-```
 
----
+Ranking B ("Enhanced")
 
-### Variant B — Enhanced
+0.45 * Vector similarity
+0.20 * Semantic similarity
+0.12 * Keyword overlap
+0.08 * Feature name match
+0.05 * Token density
+0.05 * Popularity weighting
 
-```text
-0.45 × Vector similarity
-0.20 × Semantic similarity
-0.12 × Keyword overlap
-0.08 × Feature matching
-0.05 × Token density
-0.05 × Popularity weighting
-```
 
-Selection:
+Use:
 
-```json
 "ranking_variant": "A" | "B"
-```
 
----
+🔄 Updating Records
+PUT /api/update/{doc_id}
 
-## Updating Records
 
-### Endpoint
+Partial updates supported:
 
-```http
-PUT /api/update/{document_id}
-```
-
----
-
-### Example Request
-
-```json
 {
   "feature": "Payments",
   "priority": "Critical",
-  "tags": ["Smoke", "API"]
+  "tags": ["Smoke","API"]
 }
-```
 
----
+Triggers automatic:
 
-### Automated Actions
+Gemini re-enrichment if needed
 
-* Gemini re-enrichment if fields change
-* Text re-embedding
-* Vector recalculation
+Re-embedding
 
----
+Main vector recalculation
 
-## Admin Operations
+👮 Admin APIs
+Get all test cases
+GET /api/get-all
 
-| Endpoint                            |
-| ----------------------------------- |
-| `GET /api/get-all`                  |
-| `DELETE /api/testcase/{id}`         |
-| `POST /api/delete-all?confirm=true` |
-| `GET /api/metrics`                  |
+Delete all data
+POST /api/delete-all?confirm=true
 
----
 
-## Metrics Example
+(admin only)
 
-```json
+Delete single case
+DELETE /api/testcase/{id}
+
+Metrics
+GET /api/metrics
+
+
+Returns:
+
 {
   "queries_today": 281,
-  "top_features": [
-    "Login",
-    "Checkout"
-  ]
+  "top_features": ["Login","Checkout"]
 }
-```
 
----
+🧾 Audit Logging
 
-## Audit Logging
+Every search call records:
 
-Recorded fields:
+Timestamp
 
-* Timestamp
-* Authenticated user
-* API endpoint
-* Payload / search request
-* Ranking variant used
-* Result count
+Endpoint
 
-MongoDB Collection:
+User
 
-```
+Request payload
+
+Ranking variant
+
+Result count
+
+Mongo collection:
+
 api_audit_logs
-```
 
----
+Why this matters
 
-## Why This Platform Matters
+This enables:
 
-This architecture enables:
+✅ Quality monitoring
+✅ Ranking experimentation feedback
+✅ Popular query discovery
+✅ Search UX improvements
 
-* Controlled ranking experiments via A/B testing
-* Continuous improvement through relevance monitoring
-* Full observability of user search behavior
-* Stable production-scale workflows
-* Clean debugging and scalability
+🧠 Development Workflow
+Recommended flow
 
----
+Implement ranking changes in:
 
-## Development and Customization
+app/services/ranking.py
 
-| Area             | Path                        |
-| ---------------- | --------------------------- |
-| Ranking logic    | `app/services/ranking.py`   |
-| Query expansion  | `app/services/expansion.py` |
-| Gemini reranking | `app/services/rerank.py`    |
-| Data schemas     | `app/models/schemas.py`     |
-| API routes       | `app/routes/`               |
-| Authentication   | `app/routes/auth.py`        |
 
----
+Experiment with LLM strategies in:
 
-## Final Notes
+app/services/expansion.py
+app/services/rerank.py
 
-TestCases-RAG Modular Edition v2.0 provides a robust search backend combining:
 
-* Deep semantic embeddings
-* LLM enrichment workflows
-* Ranking experimentation
-* Enterprise-grade API design
+Update schema logic in:
+
+app/models/schemas.py
+
+
+Route wiring only in:
+
+app/routes/
+"# TestCases-RAG-Version-2.0" 

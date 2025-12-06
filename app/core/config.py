@@ -131,6 +131,60 @@ class Settings:
 
                     Test cases:
                     """
+                    
+    Dedupe_Summary_Prompt = """
+                            Analyze the following end-to-end software test case.
+
+                            Your task:
+                            Generate EXACTLY a 12-word summary describing only the functional intent of the test case.
+
+                            Rules:
+                            - EXACTLY 12 words (no more, no less).
+                            - Single sentence.
+                            - No quotes, bullet points, or numbering.
+                            - No punctuation at end.
+                            - No explanations or extra words.
+
+                            Feature:
+                            "{feature}"
+
+                            Description:
+                            "{description_text}"
+
+                            Steps:
+                            "{steps_text}"
+
+                            Return ONLY the 12-word summary.
+                            """
+    
+    Dedupe_Verification_Prompt = """
+                                You are an expert QA test-case duplication detector.
+
+                                Compare the NEW TEST CASE with the EXISTING TEST CASES below.
+
+                                Determine if ANY existing test case validates the SAME FUNCTIONAL INTENT
+                                with SUBSTANTIALLY THE SAME WORKFLOW.
+
+                                Reply with EXACTLY one word only:
+
+                                DUPLICATE
+                                or
+                                UNIQUE
+
+                                Do NOT explain.
+
+                                NEW TEST CASE
+                                Feature: "{new_feature}"
+                                Description: "{new_description}"
+                                Steps:
+                                "{new_steps}"
+
+                                EXISTING TEST CASES
+                                -------------------
+                                {existing_blocks}
+                                """
+
+     
     
 
 @lru_cache
